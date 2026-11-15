@@ -174,7 +174,7 @@ class DesktopStageBridge {
     const win = getCurrentWindow();
 
     const startDragIfPrimary = (e: PointerEvent) => {
-      if (e.button !== 0) return;
+      if (e.button !== 0 || e.ctrlKey) return;
       e.preventDefault();
       win.startDragging().catch(() => {});
     };
@@ -198,6 +198,9 @@ class DesktopStageBridge {
 
   resolveMediaUrl(pathOrUrl: string): string {
     if (!pathOrUrl) return '';
+    if (pathOrUrl.startsWith('komapack://')) {
+      return this.isDesktop ? convertFileSrc(pathOrUrl.slice('komapack://'.length), 'komapack') : '';
+    }
     if (
       !this.isDesktop ||
       pathOrUrl.startsWith('http://') ||

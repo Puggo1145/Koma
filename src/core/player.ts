@@ -126,6 +126,7 @@ export class KomaPlayerEngine {
   private readonly audio = new Audio();
   private trackListeners = new Set<Listener>();
   private progressListeners = new Set<Listener>();
+  private mediaErrorListeners = new Set<() => void>();
 
   constructor() {
     this.audio.preload = 'auto';
@@ -170,6 +171,15 @@ export class KomaPlayerEngine {
     this.audio.addEventListener('ended', () => {
       this.stopSyncTimer();
       this.stepTrack(1, true);
+    });
+
+    this.audio.addEventListener('error', () => {
+      if (!this.audio.getAttribute('src') || !this.audio.error) return;
+      this.playing = false;
+      this.stopSyncTimer();
+      this.syncMediaSessionPlayback();
+      this.emitTrackChange();
+      this.mediaErrorListeners.forEach((fn) => fn());
     });
 
     this.bindMediaSession();
@@ -282,6 +292,11 @@ export class KomaPlayerEngine {
   onProgress(fn: Listener): () => void {
     this.progressListeners.add(fn);
     return () => this.progressListeners.delete(fn);
+  }
+
+  onMediaError(fn: () => void): () => void {
+    this.mediaErrorListeners.add(fn);
+    return () => this.mediaErrorListeners.delete(fn);
   }
 
   getSnapshot(): PlayerSnapshot {
@@ -482,7 +497,7 @@ export class KomaPlayerEngine {
       const extracted = await unpackZipInBrowser(zf);
       const seq = ++this.browserSeq;
       const sourceId = `zip:browser-${seq}`;
-      const packName = zf.name.replace(/\.zip$/i, '');
+      const packName = zf.name.normalize('NFC').replace(/\.zip$/i, '');
       const albums = await buildAlbumsFromVirtualEntries(
         extracted,
         sourceId,
@@ -512,7 +527,7 @@ export class KomaPlayerEngine {
       const entries: VirtualFileEntry[] = otherFiles.map((file) => {
         const relPath =
           (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
-        return { relPath: relPath.replace(/\\/g, '/'), blob: file };
+        return { relPath: relPath.normalize('NFC').replace(/\\/g, '/'), blob: file };
       });
       const hasRelFolder = otherFiles.some(
         (f) => Boolean((f as File & { webkitRelativePath?: string }).webkitRelativePath)
@@ -929,7 +944,7 @@ async function unpackZipInBrowser(archiveFile: File): Promise<VirtualFileEntry[]
     const commentLen = view.getUint16(ptr + 32, true);
     const localHeaderOffset = view.getUint32(ptr + 42, true);
 
-    const relPath = decoder.decode(bytes.subarray(ptr + 46, ptr + 46 + nameLen));
+    const relPath = decoder.decode(bytes.subarray(ptr + 46, ptr + 46 + nameLen)).normalize('NFC');
     ptr += 46 + nameLen + extraLen + commentLen;
 
     if (

@@ -25,6 +25,7 @@
         "shadow": false,
         "backgroundColor": [0, 0, 0, 0],
         "alwaysOnTop": true,
+        "acceptFirstMouse": true,
         "center": true
       }
     ],
@@ -38,7 +39,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": ["nsis", "msi", "app", "dmg"],
     "publisher": "Koma Audio",
     "category": "Music",
     "shortDescription": "Koma 拟物微显像管桌面音乐播放器",
@@ -49,6 +50,10 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "macOS": {
+      "signingIdentity": "-",
+      "hardenedRuntime": false
+    },
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"

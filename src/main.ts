@@ -231,6 +231,16 @@ async function bootstrap(): Promise<void> {
     if (progFill) progFill.style.width = `${(snap.progress * 100).toFixed(1)}%`;
   });
 
+  let lastMediaErrorRescanAt = 0;
+  player.onMediaError(() => {
+    if (!desktop.isDesktop) return;
+    const now = performance.now();
+    if (now - lastMediaErrorRescanAt < 1500) return;
+    lastMediaErrorRescanAt = now;
+    crt.resetDismissedMissingPrompts();
+    void desktop.rescanLibrary();
+  });
+
   // 6. Keyboard & Browser Drag-and-Drop Support
   window.addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;

@@ -58,6 +58,8 @@ export class MicroCrtDisplay {
   private volOsdTimer: number | null = null;
   private confirmingClear = false;
   private clearResetTimer: number | null = null;
+  private dismissedMissingIds = new Set<string>();
+  private activeMissingSourceId: string | null = null;
 
   private latestSnap: PlayerSnapshot | null = null;
   private smoothAmp = 0;
@@ -299,9 +301,48 @@ export class MicroCrtDisplay {
 
     this.renderMenu();
     this.renderSettings();
+    this.syncMissingPrompt(snap);
     this.renderProgressSnapshot(snap);
     this.drawScopeFrame(performance.now());
     this.evaluateScopeLoop();
+  }
+
+  resetDismissedMissingPrompts(): void {
+    this.dismissedMissingIds.clear();
+  }
+
+  private syncMissingPrompt(snap: PlayerSnapshot): void {
+    const stillMissingIds = new Set(
+      snap.sources.filter((s) => s.missing).map((s) => s.id)
+    );
+    for (const id of Array.from(this.dismissedMissingIds)) {
+      if (!stillMissingIds.has(id)) {
+        this.dismissedMissingIds.delete(id);
+      }
+    }
+
+    const missingSrc = desktop.isDesktop
+      ? snap.sources.find(
+          (s) => s.enabled && s.missing && !this.dismissedMissingIds.has(s.id)
+        )
+      : undefined;
+
+    const promptEl = document.getElementById('crt-missing-prompt') as HTMLElement | null;
+    const nameEl = document.getElementById('crt-missing-name');
+    if (!promptEl) return;
+
+    if (!missingSrc) {
+      this.activeMissingSourceId = null;
+      promptEl.hidden = true;
+      return;
+    }
+
+    this.activeMissingSourceId = missingSrc.id;
+    if (nameEl) {
+      nameEl.textContent = missingSrc.name;
+      nameEl.title = missingSrc.originPath || missingSrc.path || missingSrc.name;
+    }
+    promptEl.hidden = false;
   }
 
   renderProgressSnapshot(snap: PlayerSnapshot): void {
@@ -516,13 +557,14 @@ export class MicroCrtDisplay {
       foley.latchBand();
       this.pulseBeam();
       this.callbacks.onSelectTrack(item.albumIdx, 0);
+    } else if (item.missing) {
+      this.pendingFollowSourceId = item.sourceId;
+      this.callbacks.onReimportSource(item.sourceId);
     } else if (!item.enabled) {
       this.pendingFollowSourceId = item.sourceId;
       foley.latchBand();
       this.pulseBeam();
       this.callbacks.onToggleSource(item.sourceId);
-    } else if (item.missing) {
-      this.callbacks.onReimportSource(item.sourceId);
     }
   }
 
@@ -594,6 +636,37 @@ export class MicroCrtDisplay {
       },
       { passive: true }
     );
+
+    const relocateBtn = document.getElementById('crt-missing-relocate');
+    const removeMissingBtn = document.getElementById('crt-missing-remove');
+    const dismissMissingBtn = document.getElementById('crt-missing-dismiss');
+    bindMicroFoley(relocateBtn, false);
+    bindMicroFoley(removeMissingBtn, false);
+    bindMicroFoley(dismissMissingBtn, false);
+
+    relocateBtn?.addEventListener('click', () => {
+      if (!this.activeMissingSourceId) return;
+      this.pendingFollowSourceId = this.activeMissingSourceId;
+      this.callbacks.onReimportSource(this.activeMissingSourceId);
+    });
+
+    removeMissingBtn?.addEventListener('click', () => {
+      if (!this.activeMissingSourceId) return;
+      const id = this.activeMissingSourceId;
+      this.dismissedMissingIds.delete(id);
+      foley.latchBand();
+      this.pulseBeam();
+      this.callbacks.onRemoveSource(id);
+    });
+
+    dismissMissingBtn?.addEventListener('click', () => {
+      if (!this.activeMissingSourceId) return;
+      this.dismissedMissingIds.add(this.activeMissingSourceId);
+      foley.pressSwitch(false);
+      if (this.latestSnap) {
+        this.syncMissingPrompt(this.latestSnap);
+      }
+    });
 
     this.bindCarouselStageGestures();
   }
@@ -847,6 +920,7 @@ export class MicroCrtDisplay {
         } else if (act === 'add-folder') {
           this.callbacks.onRequestImport('folder');
         } else if (act === 'rescan') {
+          this.dismissedMissingIds.clear();
           foley.latchBand();
           this.pulseBeam();
           this.callbacks.onRescanLibrary();
@@ -967,7 +1041,9 @@ export class MicroCrtDisplay {
         idx === this.settingsCarouselIdx
           ? item.albumIdx >= 0
             ? `${item.title}（点击播放第 1 首）`
-            : `${item.title}（点击启用）`
+            : item.missing
+              ? `${item.title}（原文件已移除，点击重新选择）`
+              : `${item.title}（点击启用）`
           : item.title;
 
       const img = card.querySelector('img') as HTMLImageElement | null;
@@ -1061,7 +1137,7 @@ export class MicroCrtDisplay {
 
     const posLabel = `${this.settingsCarouselIdx + 1}/${items.length}`;
     const stateLabel = focused.missing
-      ? '已失效'
+      ? '未找到原文件'
       : !focused.enabled
         ? '已停用'
         : `${focused.trackCount}首`;
@@ -1072,16 +1148,25 @@ export class MicroCrtDisplay {
       <div class="crt-cf-subbar">
         <span class="crt-cf-meta">${escapeHtml(posLabel)} · ${escapeHtml(stateLabel)}</span>
         <div class="crt-cf-actions">
-          <button class="crt-cf-act" data-cf-act="toggle" title="${focused.enabled ? '停用该曲库包' : '启用该曲库包'}">${
-            focused.enabled ? '停用' : '启用'
-          }</button>
           ${
-            showDesktopOps
-              ? `<button class="crt-cf-act icon" data-cf-act="reimport" title="重新导入">↻</button>
-                 <button class="crt-cf-act icon" data-cf-act="reveal" title="打开所在目录">↗</button>`
-              : ''
+            focused.missing
+              ? `${
+                  showDesktopOps
+                    ? `<button class="crt-cf-act primary" data-cf-act="reimport" title="重新选择音乐包位置">重新选择</button>`
+                    : ''
+                }
+                <button class="crt-cf-act danger" data-cf-act="remove" title="从曲库移除">移除</button>`
+              : `<button class="crt-cf-act" data-cf-act="toggle" title="${focused.enabled ? '停用该曲库包' : '启用该曲库包'}">${
+                  focused.enabled ? '停用' : '启用'
+                }</button>
+                ${
+                  showDesktopOps
+                    ? `<button class="crt-cf-act icon" data-cf-act="reimport" title="刷新该曲库包">↻</button>
+                       <button class="crt-cf-act icon" data-cf-act="reveal" title="打开所在目录">↗</button>`
+                    : ''
+                }
+                <button class="crt-cf-act icon danger" data-cf-act="remove" title="移除该曲库包">×</button>`
           }
-          <button class="crt-cf-act icon danger" data-cf-act="remove" title="移除该曲库包">×</button>
         </div>
       </div>
     `;

@@ -1,4 +1,5 @@
 mod library;
+mod platform;
 mod tray;
 mod window_stage;
 
@@ -7,8 +8,9 @@ use window_stage::WindowStageState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    platform::configure_app_builder(tauri::Builder::default())
         .manage(WindowStageState::default())
+        .register_asynchronous_uri_scheme_protocol("komapack", library::handle_komapack_protocol)
         .invoke_handler(tauri::generate_handler![
             library::load_library,
             library::rescan_library,
@@ -23,6 +25,11 @@ pub fn run() {
         ])
         .on_window_event(|window, event| {
             if window.label() == "main" {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    if platform::intercept_close_requested(window, api) {
+                        return;
+                    }
+                }
                 if let Some(wv) = window.app_handle().get_webview_window("main") {
                     window_stage::handle_window_event(&wv, event);
                 }
@@ -35,6 +42,7 @@ pub fn run() {
             tray::install_tray_and_menus(app)?;
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running Koma");
+        .build(tauri::generate_context!())
+        .expect("error while building Koma")
+        .run(|app_handle, event| platform::handle_run_event(app_handle, &event));
 }

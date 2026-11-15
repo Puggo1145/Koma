@@ -24,8 +24,14 @@ export interface LinearScrubberSpec {
 
 export function bindMicroFoley(el: HTMLElement | null, heavy = false): void {
   if (!el) return;
-  el.addEventListener('pointerdown', () => foley.pressSwitch(heavy));
-  el.addEventListener('pointerup', () => foley.releaseSwitch(heavy));
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || e.ctrlKey) return;
+    foley.pressSwitch(heavy);
+  });
+  el.addEventListener('pointerup', (e) => {
+    if (e.button !== 0 || e.ctrlKey) return;
+    foley.releaseSwitch(heavy);
+  });
 }
 
 export function bindPushSwitch(el: HTMLElement | null, spec: PushSwitchSpec): void {
@@ -36,7 +42,7 @@ export function bindPushSwitch(el: HTMLElement | null, spec: PushSwitchSpec): vo
   el.addEventListener('pointerenter', () => foley.brushSurface());
 
   el.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || e.ctrlKey) return;
     armed = true;
     el.classList.add('down');
     el.setPointerCapture(e.pointerId);
@@ -90,7 +96,7 @@ export function bindRotaryControl(el: HTMLElement | null, spec: RotaryKnobSpec):
   };
 
   el.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || e.ctrlKey) return;
     dragging = true;
     slideUnlocked = false;
     totalMovedPx = 0;
@@ -150,7 +156,9 @@ export function bindRotaryControl(el: HTMLElement | null, spec: RotaryKnobSpec):
     'wheel',
     (e) => {
       e.preventDefault();
-      const rawWheel = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : -e.deltaY;
+      const modeScale = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1;
+      const rawWheel =
+        (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : -e.deltaY) * modeScale;
       const deg = rawWheel * 0.25;
       spec.onRotateDeg(deg);
       if (spec.onNotch) {
@@ -186,7 +194,7 @@ export function bindLinearScrubber(el: HTMLElement | null, spec: LinearScrubberS
   };
 
   el.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || e.ctrlKey) return;
     scrubbing = true;
     el.setPointerCapture(e.pointerId);
     foley.pressSwitch(false);

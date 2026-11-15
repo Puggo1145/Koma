@@ -3,12 +3,10 @@
 // crisp full-color Koma icon on Windows) and the wooden-frame right-click context menu.
 
 use crate::library::{clear_library, rescan_library, trigger_dialog_import_from_menu};
-use crate::window_stage::{
-    apply_placement, ensure_within_monitors, toggle_visibility, PlacementMode, WindowStageState,
-};
+use crate::window_stage::{apply_placement, restore_main_window, toggle_visibility, PlacementMode};
 use tauri::image::Image;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
-use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::tray::TrayIconBuilder;
 use tauri::{App, AppHandle, Emitter, Manager, WebviewWindow, Wry};
 
 pub struct SharedChassisMenu {
@@ -117,46 +115,16 @@ pub fn install_tray_and_menus(app: &App) -> tauri::Result<()> {
         chk_normal,
     });
 
-    #[cfg(target_os = "macos")]
-    let (tray_icon, is_template) = (
-        Image::from_bytes(include_bytes!("../icons/tray-template.png"))?,
-        true,
-    );
-
-    #[cfg(not(target_os = "macos"))]
-    let (tray_icon, is_template) = (
-        Image::from_bytes(include_bytes!("../icons/128x128.png"))?,
-        false,
-    );
+    let spec = crate::platform::tray_spec();
+    let tray_icon = Image::from_bytes(spec.icon_bytes)?;
 
     TrayIconBuilder::with_id("koma-tray")
         .icon(tray_icon)
-        .icon_as_template(is_template)
+        .icon_as_template(spec.icon_as_template)
         .tooltip("Koma")
         .menu(&menu)
-        .show_menu_on_left_click(false)
-        .on_tray_icon_event(|tray, event| {
-            if let TrayIconEvent::Click {
-                button: MouseButton::Left,
-                button_state: MouseButtonState::Up,
-                ..
-            } = event
-            {
-                if let Some(win) = tray.app_handle().get_webview_window("main") {
-                    if !win.is_visible().unwrap_or(true) {
-                        let _ = win.show();
-                    }
-                    ensure_within_monitors(&win, true);
-                    let is_desktop_mode = win
-                        .try_state::<WindowStageState>()
-                        .and_then(|s| s.placement.lock().ok().map(|g| *g == PlacementMode::Desktop))
-                        .unwrap_or(false);
-                    if !is_desktop_mode {
-                        let _ = win.set_focus();
-                    }
-                }
-            }
-        })
+        .show_menu_on_left_click(spec.show_menu_on_left_click)
+        .on_tray_icon_event(crate::platform::handle_tray_icon_event)
         .build(app)?;
 
     app.on_menu_event(|app_handle, event| {
@@ -189,9 +157,7 @@ fn handle_menu_action(app: &AppHandle, id: &str) {
             let _ = app.emit("tray://prev-track", ());
         }
         "open_settings" => {
-            if !win.is_visible().unwrap_or(true) {
-                let _ = win.show();
-            }
+            restore_main_window(&win);
             let _ = app.emit("tray://open-settings", ());
         }
         "import_files" => {
@@ -220,6 +186,9 @@ fn handle_menu_action(app: &AppHandle, id: &str) {
         }
         "toggle_vis" => {
             toggle_visibility(&win);
+        }
+        crate::platform::CLOSE_WINDOW_MENU_ID => {
+            let _ = win.hide();
         }
         "quit_app" => {
             app.exit(0);

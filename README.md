@@ -8,6 +8,10 @@
   基于 <strong>Tauri v2 + TypeScript</strong> 构建的跨平台（Windows / macOS）无边框透明新拟物微显像管桌面音乐播放器。
 </p>
 
+<p align="center">
+  <img src="docs/preview.png" width="720" alt="Koma Product UI" />
+</p>
+
 ---
 
 ## 特性
@@ -17,7 +21,7 @@
   - **置顶把玩**：悬浮于普通窗口上方
   - **桌面摆件**：钉在桌面图标层之上、普通应用窗口之下
   - **标准窗口**：参与系统常规窗口切换
-- **开箱即用曲库**：不内置音频资源，支持直接拖入本地音频、文件夹或标准 `.zip` 压缩包（兼容 UTF-8 / GBK / Shift-JIS），支持双语 `.lrc` 歌词与单曲/专辑双级封面。
+- **零拷贝曲库**：不内置音频资源，支持直接拖入本地音频、文件夹或标准 `.zip` 压缩包（原位流式直读、不解压双份占盘，兼容 UTF-8 / GBK / Shift-JIS；原包移动后支持一键重新定位或移除），支持双语 `.lrc` 歌词与单曲/专辑双级封面。
 - **系统媒体集成**：接入 Windows SMTC 与 macOS 控制中心。
 
 ## 音乐导入结构
@@ -35,7 +39,7 @@ music.zip（或任意本地文件夹）
 
 ## 开发与构建
 
-环境依赖：[Bun](https://bun.sh/) >= 1.1、[Rust](https://rustup.rs/)、WebView2 Runtime（Windows 10/11 自带）。
+环境依赖：[Bun](https://bun.sh/) >= 1.1、[Rust](https://rustup.rs/)、WebView2 Runtime（Windows 10/11 自带）/ WebKit（macOS 自带）。
 
 ```bash
 bun install          # 安装前端依赖

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YORU RT-01 — ヨルシカ</title>
+</head>
+<body>
+  <main class="desk-stage" id="desk-stage">
+    <section class="rt01-unit" id="rt01-unit" aria-label="Yorushika RT-01 Player">
+      <div class="rt01-wood-frame" id="rt01-wood-frame">
+        <div class="rt01-faceplate" id="rt01-faceplate">
+
+          <!-- UPPER SECTION: 5x8 Acoustic Matrix + 4:3 Curved Micro-CRT Tube -->
+          <div class="rt01-upper">
+            <div class="rt01-grille" id="rt01-grille" aria-hidden="true">
+              <div class="rt01-cone-shadow" id="rt01-cone"></div>
+            </div>
+
+            <div class="crt-cutout">
+              <div class="crt-gasket">
+                <div class="crt-tube" id="crt-tube">
+                  <div class="crt-ambient-bg" id="crt-ambient-bg"></div>
+                  <div class="crt-beam-flash" id="crt-beam-flash"></div>
+
+                  <div class="crt-raster" id="crt-raster">
+                    <header class="crt-topbar">
+                      <button class="crt-band-tag" id="crt-band-btn" title="切换专辑频道">
+                        <span class="crt-lock-dot" id="crt-lock-dot"></span>
+                        <span id="crt-freq-text">CH-01 · 19.4</span>
+                      </button>
+
+                      <nav class="crt-tabs" aria-label="CRT Display Mode">
+                        <button class="crt-tab active" data-mode="cover" title="封面视图">画</button>
+                        <button class="crt-tab" data-mode="lyrics" title="同步歌词">詞</button>
+                        <button class="crt-tab" data-mode="menu" title="选曲菜单">選</button>
+                      </nav>
+                    </header>
+
+                    <!-- VIEW 1: COVER + LIVE ELECTRON-BEAM OSCILLOSCOPE -->
+                    <div class="crt-view active" id="view-cover">
+                      <div class="crt-cover-layout" id="crt-cover-layout">
+                        <div class="crt-art-frame" id="crt-art-frame" title="点击放大 / 还原封面">
+                          <img id="crt-cover-img" alt="Album Cover" draggable="false" />
+                          <div class="crt-art-scan"></div>
+                        </div>
+
+                        <div class="crt-meta-col">
+                          <div class="crt-track-no" id="crt-track-no">TRK 01 / 08</div>
+                          <div class="crt-song-title" id="crt-song-title">藍二乗</div>
+                          <div class="crt-album-title" id="crt-album-title">だから僕は音楽を辞めた</div>
+
+                          <div class="crt-scope-box">
+                            <canvas id="crt-scope" width="196" height="60"></canvas>
+                            <div class="crt-time-row">
+                              <span id="crt-time-cur">0:00</span>
+                              <span id="crt-time-dur">0:30</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="crt-fullart-caption" id="crt-fullart-caption">
+                          <span id="crt-fullart-title">藍二乗</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- VIEW 2: SYNCHRONIZED PHOSPHOR LYRICS -->
+                    <div class="crt-view" id="view-lyrics">
+                      <div class="crt-lyrics-scroll" id="crt-lyrics-scroll"></div>
+                    </div>
+
+                    <!-- VIEW 3: CRT OSD ALBUM & TRACK MENU -->
+                    <div class="crt-view" id="view-menu">
+                      <div class="crt-menu-albums" id="crt-menu-albums"></div>
+                      <div class="crt-menu-tracks" id="crt-menu-tracks"></div>
+                    </div>
+
+                    <!-- Transient CRT Volume Phosphor OSD -->
+                    <div class="crt-vol-osd" id="crt-vol-osd">
+                      <span>VOL</span>
+                      <span class="crt-vol-bars" id="crt-vol-bars">▮▮▮▮▮▮▮▮▯▯</span>
+                      <span id="crt-vol-num">76</span>
+                    </div>
+                  </div>
+
+                  <div class="crt-scanlines" aria-hidden="true"></div>
+                  <div class="crt-vignette" aria-hidden="true"></div>
+                  <div class="crt-glass-glare" aria-hidden="true"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LOWER SECTION: Analog Scale + 2 Small Tactile Controls + Big Rotary Dial -->
+          <div class="rt01-lower">
+            <div class="rt01-left-cluster">
+              <div class="rt01-scale-window" id="rt01-scale" title="拖动调节播放进度">
+                <div class="scale-plate">
+                  <div class="scale-ticks-major"></div>
+                  <div class="scale-center-line"></div>
+                </div>
+                <div class="rt01-needle" id="rt01-needle"></div>
+                <div class="rt01-prog-track">
+                  <div class="rt01-prog-fill" id="rt01-prog"></div>
+                </div>
+              </div>
+
+              <div class="rt01-small-controls">
+                <div class="small-ctrl-slot">
+                  <span class="pilot-led" id="rt01-led"></span>
+                  <button class="neo-small-btn" id="rt01-play-btn" aria-label="Play or Pause" title="播放 / 暂停 (Space)">
+                    <svg id="rt01-play-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M4.8 3.2L13.2 8L4.8 12.8V3.2Z" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="small-ctrl-slot">
+                  <svg class="small-collar-dots" viewBox="0 0 64 64" aria-hidden="true">
+                    <circle cx="13" cy="48" r="1.1" /><circle cx="9" cy="33" r="1.1" />
+                    <circle cx="15" cy="18" r="1.1" /><circle cx="32" cy="11" r="1.3" />
+                    <circle cx="49" cy="18" r="1.1" /><circle cx="55" cy="33" r="1.1" />
+                    <circle cx="51" cy="48" r="1.1" />
+                  </svg>
+                  <div class="neo-small-knob" id="rt01-vol-knob" role="slider" aria-label="Volume and Screen Mode" title="旋转/滚轮：音量 · 单击：切换封面/歌词/菜单">
+                    <div class="knob-rotor" id="rt01-vol-rotor">
+                      <span class="small-rotor-mark"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rt01-big-dial-well">
+              <svg class="big-dial-collar" viewBox="0 0 132 132" aria-hidden="true">
+                <g fill="#b5b2a8">
+                  <circle cx="66" cy="8" r="1.3"/><circle cx="95" cy="16" r="1.2"/><circle cx="116" cy="37" r="1.2"/>
+                  <circle cx="124" cy="66" r="1.3"/><circle cx="116" cy="95" r="1.2"/><circle cx="95" cy="116" r="1.2"/>
+                  <circle cx="66" cy="124" r="1.3"/><circle cx="37" cy="116" r="1.2"/><circle cx="16" cy="95" r="1.2"/>
+                  <circle cx="8" cy="66" r="1.3"/><circle cx="16" cy="37" r="1.2"/><circle cx="37" cy="16" r="1.2"/>
+                </g>
+              </svg>
+              <div class="rt01-big-dial" id="rt01-tune-dial" title="旋转或滚轮：调频切歌 / 菜单滚动 · 单击中心：选曲菜单 / 确认">
+                <div class="knob-rotor" id="rt01-tune-rotor">
+                  <span class="big-rotor-mark"></span>
+                </div>
+                <div class="big-dial-dimple"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

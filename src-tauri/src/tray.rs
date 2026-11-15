@@ -1,10 +1,10 @@
-// RUST DEEP MODULE C: MACOS MENU BAR TRAY & CHASSIS CONTEXT MENU
-// Owns both the top status-bar monochrome template icon and the wooden-frame right-click menu,
-// keeping placement checkmarks (Floating / Desktop / Normal) and Compact Size synchronized.
+// RUST DEEP MODULE C: NATIVE SYSTEM TRAY & CHASSIS CONTEXT MENU
+// Owns both the OS status-bar / taskbar tray icon (monochrome template on macOS,
+// crisp full-color Koma icon on Windows) and the wooden-frame right-click context menu.
 
-use crate::library::scan_local_yorushika;
+use crate::library::{clear_library, rescan_library, trigger_dialog_import_from_menu};
 use crate::window_stage::{
-    apply_placement, apply_scale, toggle_visibility, ChassisScale, PlacementMode, WindowStageState,
+    apply_placement, ensure_within_monitors, toggle_visibility, PlacementMode, WindowStageState,
 };
 use tauri::image::Image;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
@@ -16,7 +16,6 @@ pub struct SharedChassisMenu {
     pub chk_floating: CheckMenuItem<Wry>,
     pub chk_desktop: CheckMenuItem<Wry>,
     pub chk_normal: CheckMenuItem<Wry>,
-    pub chk_compact: CheckMenuItem<Wry>,
 }
 
 pub fn install_tray_and_menus(app: &App) -> tauri::Result<()> {
@@ -27,10 +26,35 @@ pub fn install_tray_and_menus(app: &App) -> tauri::Result<()> {
     let item_prev = MenuItem::with_id(handle, "prev_track", "上一首", true, None::<&str>)?;
     let sep_1 = PredefinedMenuItem::separator(handle)?;
 
+    let item_open_settings = MenuItem::with_id(
+        handle,
+        "open_settings",
+        "曲库设置...",
+        true,
+        None::<&str>,
+    )?;
+    let item_import_files = MenuItem::with_id(
+        handle,
+        "import_files",
+        "导入音乐 / 压缩包...",
+        true,
+        None::<&str>,
+    )?;
+    let item_import_folder = MenuItem::with_id(
+        handle,
+        "import_folder",
+        "导入文件夹...",
+        true,
+        None::<&str>,
+    )?;
+    let item_rescan = MenuItem::with_id(handle, "rescan_library", "刷新曲库", true, None::<&str>)?;
+    let item_clear_lib = MenuItem::with_id(handle, "clear_library", "清空曲库", true, None::<&str>)?;
+    let sep_2 = PredefinedMenuItem::separator(handle)?;
+
     let chk_floating = CheckMenuItem::with_id(
         handle,
         "place_floating",
-        "置顶把玩模式（浮于窗口上方）",
+        "置顶把玩模式",
         true,
         true,
         None::<&str>,
@@ -38,7 +62,7 @@ pub fn install_tray_and_menus(app: &App) -> tauri::Result<()> {
     let chk_desktop = CheckMenuItem::with_id(
         handle,
         "place_desktop",
-        "桌面摆件模式（固定在壁纸层）",
+        "桌面摆件模式",
         true,
         false,
         None::<&str>,
@@ -51,32 +75,17 @@ pub fn install_tray_and_menus(app: &App) -> tauri::Result<()> {
         false,
         None::<&str>,
     )?;
-    let sep_2 = PredefinedMenuItem::separator(handle)?;
+    let sep_3 = PredefinedMenuItem::separator(handle)?;
 
-    let chk_compact = CheckMenuItem::with_id(
-        handle,
-        "toggle_compact",
-        "袖珍机身尺寸 (82%)",
-        true,
-        false,
-        None::<&str>,
-    )?;
-    let item_rescan = MenuItem::with_id(
-        handle,
-        "rescan_library",
-        "重新扫描 ~/Music/Yorushika",
-        true,
-        None::<&str>,
-    )?;
     let item_toggle_vis = MenuItem::with_id(
         handle,
         "toggle_vis",
-        "显示 / 隐藏机身",
+        "显示 / 隐藏",
         true,
         None::<&str>,
     )?;
-    let sep_3 = PredefinedMenuItem::separator(handle)?;
-    let item_quit = MenuItem::with_id(handle, "quit_app", "退出 Yoru RT-01", true, None::<&str>)?;
+    let sep_4 = PredefinedMenuItem::separator(handle)?;
+    let item_quit = MenuItem::with_id(handle, "quit_app", "退出", true, None::<&str>)?;
 
     let menu = Menu::with_items(
         handle,
@@ -85,14 +94,18 @@ pub fn install_tray_and_menus(app: &App) -> tauri::Result<()> {
             &item_next,
             &item_prev,
             &sep_1,
+            &item_open_settings,
+            &item_import_files,
+            &item_import_folder,
+            &item_rescan,
+            &item_clear_lib,
+            &sep_2,
             &chk_floating,
             &chk_desktop,
             &chk_normal,
-            &sep_2,
-            &chk_compact,
-            &item_rescan,
-            &item_toggle_vis,
             &sep_3,
+            &item_toggle_vis,
+            &sep_4,
             &item_quit,
         ],
     )?;
@@ -102,15 +115,24 @@ pub fn install_tray_and_menus(app: &App) -> tauri::Result<()> {
         chk_floating,
         chk_desktop,
         chk_normal,
-        chk_compact,
     });
 
-    let tray_icon = Image::from_bytes(include_bytes!("../icons/tray-template.png"))?;
+    #[cfg(target_os = "macos")]
+    let (tray_icon, is_template) = (
+        Image::from_bytes(include_bytes!("../icons/tray-template.png"))?,
+        true,
+    );
 
-    TrayIconBuilder::with_id("yoru-tray")
+    #[cfg(not(target_os = "macos"))]
+    let (tray_icon, is_template) = (
+        Image::from_bytes(include_bytes!("../icons/128x128.png"))?,
+        false,
+    );
+
+    TrayIconBuilder::with_id("koma-tray")
         .icon(tray_icon)
-        .icon_as_template(true)
-        .tooltip("Yoru RT-01 — ヨルシカ")
+        .icon_as_template(is_template)
+        .tooltip("Koma")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_tray_icon_event(|tray, event| {
@@ -124,13 +146,19 @@ pub fn install_tray_and_menus(app: &App) -> tauri::Result<()> {
                     if !win.is_visible().unwrap_or(true) {
                         let _ = win.show();
                     }
-                    let _ = win.set_focus();
+                    ensure_within_monitors(&win, true);
+                    let is_desktop_mode = win
+                        .try_state::<WindowStageState>()
+                        .and_then(|s| s.placement.lock().ok().map(|g| *g == PlacementMode::Desktop))
+                        .unwrap_or(false);
+                    if !is_desktop_mode {
+                        let _ = win.set_focus();
+                    }
                 }
             }
         })
         .build(app)?;
 
-    // Also handle menu events when popped up as a right-click context menu on the window
     app.on_menu_event(|app_handle, event| {
         handle_menu_action(app_handle, event.id().as_ref());
     });
@@ -160,6 +188,24 @@ fn handle_menu_action(app: &AppHandle, id: &str) {
         "prev_track" => {
             let _ = app.emit("tray://prev-track", ());
         }
+        "open_settings" => {
+            if !win.is_visible().unwrap_or(true) {
+                let _ = win.show();
+            }
+            let _ = app.emit("tray://open-settings", ());
+        }
+        "import_files" => {
+            trigger_dialog_import_from_menu(app.clone(), "files");
+        }
+        "import_folder" => {
+            trigger_dialog_import_from_menu(app.clone(), "folder");
+        }
+        "rescan_library" => {
+            let _ = rescan_library(app.clone());
+        }
+        "clear_library" => {
+            let _ = clear_library(app.clone());
+        }
         "place_floating" => {
             apply_placement(&win, PlacementMode::Floating);
             sync_menu_checkmarks(app, PlacementMode::Floating);
@@ -171,26 +217,6 @@ fn handle_menu_action(app: &AppHandle, id: &str) {
         "place_normal" => {
             apply_placement(&win, PlacementMode::Normal);
             sync_menu_checkmarks(app, PlacementMode::Normal);
-        }
-        "toggle_compact" => {
-            let next_scale = if let Some(st) = win.try_state::<WindowStageState>() {
-                let cur = st.scale.lock().map(|g| *g).unwrap_or(ChassisScale::Standard);
-                if cur == ChassisScale::Standard {
-                    ChassisScale::Compact
-                } else {
-                    ChassisScale::Standard
-                }
-            } else {
-                ChassisScale::Standard
-            };
-            apply_scale(app, &win, next_scale);
-            if let Some(shared) = app.try_state::<SharedChassisMenu>() {
-                let _ = shared.chk_compact.set_checked(next_scale == ChassisScale::Compact);
-            }
-        }
-        "rescan_library" => {
-            let albums = scan_local_yorushika();
-            let _ = app.emit("library://updated", albums);
         }
         "toggle_vis" => {
             toggle_visibility(&win);

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Yoru RT-01",
-  "version": "0.1.0",
-  "identifier": "jp.yorushika.rt01player",
+  "productName": "Koma",
+  "version": "0.2.0",
+  "identifier": "app.koma.player",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Yoru RT-01",
+        "title": "Koma",
         "width": 468,
         "height": 484,
         "resizable": false,
@@ -23,6 +23,7 @@
         "decorations": false,
         "transparent": true,
         "shadow": false,
+        "backgroundColor": [0, 0, 0, 0],
         "alwaysOnTop": true,
         "center": true
       }
@@ -37,13 +38,28 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg"],
+    "targets": ["nsis", "msi"],
+    "publisher": "Koma Audio",
+    "category": "Music",
+    "shortDescription": "Koma 拟物微显像管桌面音乐播放器",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
+      "nsis": {
+        "installMode": "both",
+        "languages": ["SimpChinese", "English"]
+      },
+      "wix": {
+        "language": "zh-CN"
+      }
+    }
   }
 }

@@ -9,9 +9,10 @@
 html, body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", "PingFang SC", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", "Helvetica Neue", "Hiragino Sans", "Yu Gothic UI", "Meiryo", "PingFang SC", "Microsoft YaHei UI", sans-serif;
   color: #242320;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* Browser Preview Surface */
@@ -45,20 +46,14 @@ html.is-desktop .desk-stage {
 }
 
 .rt01-unit {
-  --font-ui: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", "PingFang SC", sans-serif;
-  --font-jp: "Hiragino Mincho ProN", "YuMincho", "Klee", "Songti SC", serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Monaco, monospace;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", "Helvetica Neue", "Hiragino Sans", "Yu Gothic UI", "Meiryo", "PingFang SC", "Microsoft YaHei UI", sans-serif;
+  --font-jp: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "BIZ UDPMincho", "Klee", "Songti SC", "STSong", serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", "Consolas", Menlo, Monaco, monospace;
   --braun-orange: #ee6226;
   --crt-fg: #dff2ff;
   --crt-glow: rgba(130, 202, 255, 0.44);
 
   position: relative;
-  transform-origin: center center;
-  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-html.scale-compact .rt01-unit {
-  transform: scale(0.82);
 }
 
 body.file-hover .rt01-wood-frame {
@@ -119,31 +114,31 @@ body.file-hover .rt01-wood-frame {
     inset 0 2px 2.5px rgba(255, 255, 255, 0.96),
     inset 0 -2px 4px rgba(0, 0, 0, 0.055),
     0 0 0 1px rgba(120, 90, 56, 0.18);
-  padding: 22px 22px 20px;
+  padding: 21px 22px 19px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
 /* ==========================================================================
-   2. UPPER LEFT: 5x8 PRECISION DRILLED ACOUSTIC MATRIX
+   2. UPPER SECTION: 6x9 ACOUSTIC MATRIX (108x208) + 1:1 SQUARE CRT (208x208)
    ========================================================================== */
 .rt01-upper {
   display: flex;
   align-items: stretch;
   justify-content: space-between;
-  gap: 14px;
-  height: 184px;
+  gap: 16px;
+  height: 208px;
 }
 
 .rt01-grille {
   position: relative;
-  width: 82px;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  place-items: center;
-  padding: 3px 0;
+  width: 108px;
+  height: 208px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   cursor: grab;
 }
@@ -154,40 +149,37 @@ body.file-hover .rt01-wood-frame {
 
 .rt01-cone-shadow {
   position: absolute;
-  width: 74px;
-  height: 74px;
+  width: 92px;
+  height: 92px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(0, 0, 0, 0.055) 0%, rgba(0, 0, 0, 0.032) 56%, transparent 70%);
   pointer-events: none;
   will-change: transform;
 }
 
-.speaker-dot {
+.rt01-grille-svg {
   position: relative;
   z-index: 1;
-  width: 7.5px;
-  height: 7.5px;
-  border-radius: 50%;
-  background: #3d3b37;
-  box-shadow:
-    inset 0 2px 2.5px rgba(0, 0, 0, 0.72),
-    0 1px 0 rgba(255, 255, 255, 0.92);
+  width: 108px;
+  height: 208px;
+  display: block;
   pointer-events: none;
+  shape-rendering: geometricPrecision;
 }
 
 /* ==========================================================================
-   3. LOWER HARDWARE CLUSTER: ANALOG SCALE + 2 SMALL SWITCH/KNOBS + BIG DIAL
+   3. BALANCED LOWER HARDWARE DECK (114px): SCALE + 2 KNOBS + BIG DIAL
    ========================================================================== */
 .rt01-lower {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  height: 134px;
+  height: 114px;
 }
 
 .rt01-left-cluster {
-  width: 184px;
-  height: 100%;
+  width: 192px;
+  height: 110px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -195,12 +187,12 @@ body.file-hover .rt01-wood-frame {
 
 .rt01-scale-window {
   position: relative;
-  width: 182px;
-  height: 38px;
-  border-radius: 11px;
+  width: 190px;
+  height: 34px;
+  border-radius: 10px;
   background: linear-gradient(180deg, #dcdad1 0%, #eae8e1 52%, #e2e0d8 100%);
   box-shadow:
-    inset 0 2.5px 5px rgba(0, 0, 0, 0.16),
+    inset 0 2.5px 4.5px rgba(0, 0, 0, 0.16),
     inset 0 0 0 1px rgba(0, 0, 0, 0.065),
     0 1.5px 0 rgba(255, 255, 255, 0.94);
   padding: 0 12px;
@@ -208,6 +200,7 @@ body.file-hover .rt01-wood-frame {
   align-items: center;
   overflow: hidden;
   cursor: ew-resize;
+  touch-action: none;
 }
 
 .rt01-scale-window::after {
@@ -221,7 +214,7 @@ body.file-hover .rt01-wood-frame {
 .scale-plate {
   position: relative;
   width: 100%;
-  height: 16px;
+  height: 14px;
 }
 
 .scale-ticks-major {
@@ -233,14 +226,14 @@ body.file-hover .rt01-wood-frame {
       rgba(54, 52, 46, 0.44) 0px,
       rgba(54, 52, 46, 0.44) 1.2px,
       transparent 1.2px,
-      transparent 19.6px
+      transparent 19.8px
     ),
     repeating-linear-gradient(
       90deg,
       rgba(54, 52, 46, 0.24) 0px,
       rgba(54, 52, 46, 0.24) 1px,
       transparent 1px,
-      transparent 4.9px
+      transparent 4.95px
     );
 }
 
@@ -256,14 +249,14 @@ body.file-hover .rt01-wood-frame {
 .rt01-needle {
   position: absolute;
   top: 3px;
-  bottom: 4px;
+  bottom: 3.5px;
   width: 2.5px;
   border-radius: 2px;
   background: var(--braun-orange);
   box-shadow:
     0 0 5px rgba(238, 98, 38, 0.42),
     1px 0 1px rgba(0, 0, 0, 0.14);
-  left: 14px;
+  left: 13px;
   transition: left 0.26s cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;
   z-index: 2;
@@ -274,7 +267,7 @@ body.file-hover .rt01-wood-frame {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 3px;
+  height: 2.8px;
   background: rgba(0, 0, 0, 0.05);
   pointer-events: none;
 }
@@ -289,15 +282,15 @@ body.file-hover .rt01-wood-frame {
 .rt01-small-controls {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding-left: 8px;
-  padding-bottom: 4px;
+  gap: 28px;
+  padding-left: 12px;
+  padding-bottom: 2px;
 }
 
 .small-ctrl-slot {
   position: relative;
-  width: 52px;
-  height: 52px;
+  width: 50px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -326,8 +319,8 @@ body.file-hover .rt01-wood-frame {
 .small-collar-dots {
   position: absolute;
   inset: -6px;
-  width: 64px;
-  height: 64px;
+  width: 62px;
+  height: 62px;
   fill: #b4b1a7;
   pointer-events: none;
 }
@@ -335,8 +328,8 @@ body.file-hover .rt01-wood-frame {
 .neo-small-btn,
 .neo-small-knob {
   position: relative;
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   border: none;
   padding: 0;
@@ -352,6 +345,7 @@ body.file-hover .rt01-wood-frame {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  touch-action: none;
   transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
@@ -363,7 +357,7 @@ body.file-hover .rt01-wood-frame {
 .neo-small-knob::before {
   content: '';
   position: absolute;
-  inset: 6px;
+  inset: 5.5px;
   border-radius: 50%;
   background: linear-gradient(145deg, #eceae3, #f9f8f5);
   box-shadow: inset 1px 1.5px 3px rgba(0, 0, 0, 0.05), 0 1px 0 #ffffff;
@@ -395,19 +389,19 @@ body.file-hover .rt01-wood-frame {
 
 .small-rotor-mark {
   position: absolute;
-  top: 8px;
+  top: 7.5px;
   left: 50%;
   transform: translateX(-50%);
-  width: 2.5px;
-  height: 7px;
+  width: 2.4px;
+  height: 6.5px;
   border-radius: 2px;
   background: #5a5750;
 }
 
 .rt01-big-dial-well {
   position: relative;
-  width: 118px;
-  height: 118px;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
   background: linear-gradient(145deg, #e2e0d8, #f7f6f1);
   box-shadow:
@@ -421,24 +415,25 @@ body.file-hover .rt01-wood-frame {
 .big-dial-collar {
   position: absolute;
   inset: -7px;
-  width: 132px;
-  height: 132px;
+  width: 124px;
+  height: 124px;
   pointer-events: none;
 }
 
 .rt01-big-dial {
   position: relative;
-  width: 98px;
-  height: 98px;
+  width: 92px;
+  height: 92px;
   border-radius: 50%;
   background: linear-gradient(142deg, #ffffff 0%, #f0eee7 56%, #dfddd4 100%);
   box-shadow:
-    8px 13px 24px rgba(0, 0, 0, 0.16),
+    8px 12px 22px rgba(0, 0, 0, 0.16),
     2px 4px 7px rgba(0, 0, 0, 0.085),
     -4px -4px 10px rgba(255, 255, 255, 0.94),
     inset 0 2px 2px #ffffff,
     0 0 0 1px rgba(0, 0, 0, 0.045);
   cursor: grab;
+  touch-action: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -459,8 +454,8 @@ body.file-hover .rt01-wood-frame {
 }
 
 .big-dial-dimple {
-  width: 72px;
-  height: 72px;
+  width: 66px;
+  height: 66px;
   border-radius: 50%;
   background: linear-gradient(145deg, #ebe9e1, #f9f8f4);
   box-shadow:
@@ -475,8 +470,8 @@ body.file-hover .rt01-wood-frame {
   top: 6px;
   left: 50%;
   transform: translateX(-50%);
-  width: 3.5px;
-  height: 8px;
+  width: 3.3px;
+  height: 7.5px;
   border-radius: 2px;
   background: var(--braun-orange);
   box-shadow: 0 0 3px rgba(238, 98, 38, 0.35);

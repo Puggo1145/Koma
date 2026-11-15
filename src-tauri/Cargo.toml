@@ -1,21 +1,34 @@
 [package]
-name = "yoru-rt01"
-version = "0.1.0"
-description = "Yorushika RT-01 Neo-Skeuomorphic Micro-CRT Desktop Player"
-authors = ["Yoru Studio"]
+name = "koma"
+version = "0.2.0"
+description = "Koma — Neo-Skeuomorphic Micro-CRT Desktop Music Player"
+authors = ["Koma Audio"]
 edition = "2021"
 
 [lib]
-name = "yoru_rt01_lib"
+name = "koma_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["macos-private-api", "tray-icon", "protocol-asset", "image-png"] }
+tauri = { version = "2", features = ["macos-private-api", "tray-icon", "protocol-asset", "image-png", "image-ico"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+lofty = "0.22"
+zip = { version = "2.2", default-features = false, features = ["deflate"] }
+rfd = "0.15"
+encoding_rs = "0.8"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Dwm",
+  "Win32_Graphics_Gdi",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+] }

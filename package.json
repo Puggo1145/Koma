@@ -1,8 +1,8 @@
 {
-  "name": "yoru-rt01",
+  "name": "koma",
   "private": true,
-  "version": "0.1.0",
-  "description": "Yorushika RT-01 Neo-Skeuomorphic Micro-CRT Desktop Player",
+  "version": "0.2.0",
+  "description": "Koma — Neo-Skeuomorphic Micro-CRT Desktop Music Player",
   "type": "module",
   "scripts": {
     "dev": "vite",

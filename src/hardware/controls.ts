@@ -1,6 +1,6 @@
 // DEEP MODULE 4: PHYSICAL HARDWARE KINEMATICS
-// Hides pointer capture, polar atan2 angle unwrapping, center press disambiguation,
-// mousewheel normalization, and two-phase mechanical foley behind clean hardware primitives.
+// Hides pointer capture, linear XY slide kinematics, center press disambiguation,
+// horizontal/vertical mousewheel normalization, and two-phase mechanical foley.
 
 import { foley } from '../core/foley';
 
@@ -60,10 +60,10 @@ export function bindRotaryControl(el: HTMLElement | null, spec: RotaryKnobSpec):
   const heavyPress = spec.heavyPress ?? true;
 
   let dragging = false;
-  let prevAngleRad: number | null = null;
+  let slideUnlocked = false;
   let prevX = 0;
   let prevY = 0;
-  let totalMovedDeg = 0;
+  let totalMovedPx = 0;
   let notchAccum = 0;
   let lastMoveMs = 0;
 
@@ -92,18 +92,12 @@ export function bindRotaryControl(el: HTMLElement | null, spec: RotaryKnobSpec):
   el.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     dragging = true;
-    totalMovedDeg = 0;
+    slideUnlocked = false;
+    totalMovedPx = 0;
     notchAccum = 0;
     lastMoveMs = performance.now();
     prevX = e.clientX;
     prevY = e.clientY;
-
-    const rect = el.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const radius = Math.hypot(e.clientX - cx, e.clientY - cy);
-    // Use polar atan2 swirling on large dials; linear vertical/horizontal drag on small knobs
-    prevAngleRad = rect.width >= 72 && radius > 13 ? Math.atan2(e.clientY - cy, e.clientX - cx) : null;
 
     el.classList.add('down');
     el.setPointerCapture(e.pointerId);
@@ -112,36 +106,26 @@ export function bindRotaryControl(el: HTMLElement | null, spec: RotaryKnobSpec):
 
   el.addEventListener('pointermove', (e) => {
     if (!dragging) return;
-    const rect = el.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const dxCenter = e.clientX - cx;
-    const dyCenter = e.clientY - cy;
-    const radius = Math.hypot(dxCenter, dyCenter);
-
-    let degDelta = 0;
-    if (rect.width >= 72 && radius > 13) {
-      const curRad = Math.atan2(dyCenter, dxCenter);
-      if (prevAngleRad !== null) {
-        let diff = curRad - prevAngleRad;
-        while (diff > Math.PI) diff -= Math.PI * 2;
-        while (diff < -Math.PI) diff += Math.PI * 2;
-        degDelta = (diff * 180) / Math.PI;
-      }
-      prevAngleRad = curRad;
-    } else {
-      const dy = prevY - e.clientY;
-      const dx = e.clientX - prevX;
-      degDelta = dy * 1.45 + dx * 0.65;
-      prevAngleRad = null;
-    }
-
+    const dx = e.clientX - prevX;
+    const dy = prevY - e.clientY;
     prevX = e.clientX;
     prevY = e.clientY;
-    totalMovedDeg += Math.abs(degDelta);
 
-    if (totalMovedDeg > 4.2) {
+    const stepPx = Math.hypot(dx, dy);
+    if (stepPx === 0) return;
+    totalMovedPx += stepPx;
+
+    // Rightward (dx > 0) or Upward (dy > 0) slides advance (+1);
+    // Leftward (dx < 0) or Downward (dy < 0) slides step back (-1).
+    const dominantDelta = Math.abs(dx) >= Math.abs(dy) ? dx : dy;
+    const degDelta = dominantDelta * 1.45;
+
+    if (!slideUnlocked && totalMovedPx > 4.5) {
+      slideUnlocked = true;
       el.classList.remove('down');
+    }
+
+    if (slideUnlocked) {
       processDelta(degDelta);
     }
   });
@@ -150,7 +134,7 @@ export function bindRotaryControl(el: HTMLElement | null, spec: RotaryKnobSpec):
     if (!dragging) return;
     dragging = false;
     el.classList.remove('down');
-    if (totalMovedDeg <= 4.2) {
+    if (!slideUnlocked) {
       foley.releaseSwitch(heavyPress);
       if (allowPress && spec.onPressCenter) {
         spec.onPressCenter();
@@ -166,11 +150,12 @@ export function bindRotaryControl(el: HTMLElement | null, spec: RotaryKnobSpec):
     'wheel',
     (e) => {
       e.preventDefault();
-      const deg = -e.deltaY * 0.25;
+      const rawWheel = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : -e.deltaY;
+      const deg = rawWheel * 0.25;
       spec.onRotateDeg(deg);
       if (spec.onNotch) {
         wheelAccum += deg;
-        const threshold = Math.max(6, spec.getNotchThresholdDeg() * 0.9);
+        const threshold = Math.max(6, spec.getNotchThresholdDeg() * 0.85);
         if (Math.abs(wheelAccum) >= threshold) {
           const dir: 1 | -1 = wheelAccum > 0 ? 1 : -1;
           wheelAccum = 0;

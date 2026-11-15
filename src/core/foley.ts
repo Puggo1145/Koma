@@ -137,9 +137,9 @@ class HardwareFoleyEngine {
 
   latchBand(): void {
     this.fire('bandLatch', {
-      gain: 0.82,
-      rate: 0.96,
-      jitter: 0.02,
+      gain: 0.68,
+      rate: 0.98,
+      jitter: 0.025,
       minGapMs: 55,
     });
   }

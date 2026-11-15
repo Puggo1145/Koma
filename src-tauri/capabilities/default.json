@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capabilities for the RT-01 main desktop hardware window",
+  "description": "Capabilities for the Koma main desktop hardware window",
   "windows": ["main"],
   "permissions": [
     "core:default",
